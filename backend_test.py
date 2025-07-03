@@ -12,14 +12,10 @@ class TennisMatchPredictorAPITest(unittest.TestCase):
         self.tests_passed = 0
 
     def setUp(self):
-        self.tests_run += 1
+        pass
 
     def tearDown(self):
-        if hasattr(self, '_outcome'):  # Python 3.4+
-            result = self.defaultTestResult()
-            self._feedErrorsToResult(result, self._outcome.errors)
-            if result.wasSuccessful():
-                self.tests_passed += 1
+        pass
 
     def test_01_health_check(self):
         """Test health check endpoint"""
