@@ -228,8 +228,15 @@ class TennisMatchPredictorAPITest(unittest.TestCase):
         
         print(f"\n🧪 Running {len(test_methods)} API tests for Tennis Match Predictor...")
         
+        self.tests_run = len(test_methods)
+        self.tests_passed = 0
+        
         for method in test_methods:
-            getattr(self, method)()
+            try:
+                getattr(self, method)()
+                self.tests_passed += 1
+            except Exception as e:
+                print(f"❌ Test {method} failed: {str(e)}")
         
         print(f"\n📊 Tests passed: {self.tests_passed}/{self.tests_run}")
         return self.tests_passed == self.tests_run
