@@ -68,7 +68,10 @@ class TennisMatchPredictorAPITest(unittest.TestCase):
         print("\n🔍 Testing predict match endpoint...")
         
         # Get players first
-        players = self.test_02_get_players()
+        response = requests.get(f"{self.base_url}/api/players")
+        self.assertEqual(response.status_code, 200)
+        players = response.json()["players"]
+        
         player1 = players[0]["name"]
         player2 = players[1]["name"]
         
