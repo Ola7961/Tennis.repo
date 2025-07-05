@@ -1,0 +1,54 @@
+/home/ubuntu/Tennis_repo/backend/server.py:313: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server process [20614]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8002 (Press CTRL+C to quit)
+Loading real ATP data...
+Loaded 194996 matches from all files
+Created 292556 training examples from 146278 matches
+Loaded data for 3804 players
+Training data shape: (292556, 13)
+Training models on real ATP data...
+Training XGBoost model...
+Training Neural Network (MLPClassifier) model...
+XGBoost Model trained! Train accuracy: 0.719, Test accuracy: 0.685
+Neural Network Model trained! Train accuracy: 0.692, Test accuracy: 0.687
+Real ATP data loaded and models trained successfully!
+INFO:     10.78.224.1:53094 - "GET /api/wimbledon/draw HTTP/1.1" 200 OK
+/usr/local/lib/python3.11/dist-packages/sklearn/base.py:465: UserWarning: X does not have valid feature names, but StandardScaler was fitted with feature names
+  warnings.warn(
+/usr/local/lib/python3.11/dist-packages/sklearn/base.py:465: UserWarning: X does not have valid feature names, but StandardScaler was fitted with feature names
+  warnings.warn(
+/usr/local/lib/python3.11/dist-packages/sklearn/base.py:465: UserWarning: X does not have valid feature names, but StandardScaler was fitted with feature names
+  warnings.warn(
+/usr/local/lib/python3.11/dist-packages/sklearn/base.py:465: UserWarning: X does not have valid feature names, but StandardScaler was fitted with feature names
+  warnings.warn(
+INFO:     10.78.224.1:53106 - "GET /api/wimbledon/predictions HTTP/1.1" 200 OK
+INFO:     10.78.224.1:53108 - "GET /api/players HTTP/1.1" 200 OK
+INFO:     10.78.224.1:53112 - "GET /api/model/info HTTP/1.1" 200 OK
+INFO:     10.78.224.1:53128 - "GET /api/wimbledon/probabilities HTTP/1.1" 200 OK
+INFO:     10.78.224.1:60474 - "GET /api/players/search?q=t. HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38566 - "GET /api/players/search?q=Taylor%20fri HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38562 - "GET /api/players/search?q=Taylo HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38580 - "GET /api/players/search?q=Taylor%20frit HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38582 - "GET /api/players/search?q=Tay HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38598 - "GET /api/players/search?q=Taylor%20 HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38604 - "GET /api/players/search?q=Taylor%20fr HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38612 - "GET /api/players/search?q=Ta HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38626 - "GET /api/players/search?q=Taylor HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38634 - "GET /api/players/search?q=Tayl HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38644 - "GET /api/players/search?q=Taylor%20f HTTP/1.1" 200 OK
+INFO:     10.78.224.1:38652 - "GET /api/players/search?q=Taylor%20fritz HTTP/1.1" 200 OK
+INFO:     10.78.224.1:54392 - "GET /api/players/search?q=Alejandro%20Davidovich%20Fokina HTTP/1.1" 200 OK
+INFO:     10.78.224.1:60490 - "GET /api/players/search?q=Taylor%20Fritz%20 HTTP/1.1" 200 OK
+INFO:     10.78.224.1:40908 - "GET /api/players/search?q=Alejandro%20Davidovich%20Fokina HTTP/1.1" 200 OK
+INFO:     10.78.224.1:40918 - "OPTIONS /api/predict HTTP/1.1" 200 OK
+/usr/local/lib/python3.11/dist-packages/sklearn/base.py:465: UserWarning: X does not have valid feature names, but StandardScaler was fitted with feature names
+  warnings.warn(
+INFO:     10.78.224.1:39738 - "POST /api/predict HTTP/1.1" 200 OK

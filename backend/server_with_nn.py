@@ -11,9 +11,8 @@ import uuid
 import os
 from typing import Dict, List, Optional
 from data_processor import TennisDataProcessor
-from wimbledon_draw_data import WIMBLEDON_2025_DRAW, get_player_section, calculate_draw_difficulty
 
-app = FastAPI(title="Tennis Match Predictor API - Real Data with NN + Draw Predictions")
+app = FastAPI(title="Tennis Match Predictor API - Real Data with NN")
 
 # CORS middleware
 app.add_middleware(
@@ -35,12 +34,12 @@ class RealTennisPredictor:
         self.players_data = {}
         self.training_data = None
         
-    def load_and_train(self, data_dir):
+    def load_and_train(self, data_path):
         """Load real ATP data and train both models"""
         print("Loading real ATP data...")
         
         # Load the data
-        if not self.data_processor.load_atp_data(data_dir):
+        if not self.data_processor.load_atp_data(data_path):
             raise Exception("Failed to load ATP data")
         
         # Get processed data
@@ -265,48 +264,6 @@ class RealTennisPredictor:
             'note': "One or both players not found in database"
         }
 
-    def calculate_tournament_probabilities(self, players_list, surface='Grass'):
-        """Calculate tournament win probabilities for a list of players"""
-        probabilities = {}
-        
-        for player in players_list:
-            if player not in self.players_data:
-                probabilities[player] = 0.0
-                continue
-                
-            # Calculate probability based on ranking, surface performance, and draw difficulty
-            player_data = self.players_data[player]
-            
-            # Base probability from ranking (higher rank = lower probability)
-            rank = player_data.get('current_rank', 999)
-            base_prob = max(0.01, 1.0 / rank) if rank <= 100 else 0.01
-            
-            # Surface adjustment
-            surface_stats = player_data.get('surface_stats', {}).get(surface, {})
-            surface_win_rate = surface_stats.get('win_rate', 0.5)
-            surface_adjustment = surface_win_rate / 0.5  # Normalize around 0.5
-            
-            # Draw difficulty adjustment
-            draw_difficulty = calculate_draw_difficulty(player)
-            difficulty_adjustment = 1.0 - (draw_difficulty * 0.3)  # Reduce prob by up to 30% for hard draws
-            
-            # Recent form adjustment
-            recent_form = player_data.get('recent_form', 5)
-            form_adjustment = recent_form / 5.0  # Normalize around 5/10
-            
-            # Combine all factors
-            final_prob = base_prob * surface_adjustment * difficulty_adjustment * form_adjustment
-            
-            # Normalize to reasonable range
-            probabilities[player] = min(max(final_prob, 0.001), 0.5)
-        
-        # Normalize so all probabilities sum to 1
-        total_prob = sum(probabilities.values())
-        if total_prob > 0:
-            probabilities = {k: v/total_prob for k, v in probabilities.items()}
-        
-        return probabilities
-
 # Initialize predictor
 predictor = RealTennisPredictor()
 
@@ -314,8 +271,8 @@ predictor = RealTennisPredictor()
 async def startup_event():
     """Load data and train model on startup"""
     try:
-        data_dir = "/home/ubuntu/Tennis_repo/data"
-        predictor.load_and_train(data_dir)
+        data_path = "/home/ubuntu/Tennis_repo/data/atp_matches_2024.csv"
+        predictor.load_and_train(data_path)
         print("Real ATP data loaded and models trained successfully!")
     except Exception as e:
         print(f"Error during startup: {e}")
@@ -328,8 +285,7 @@ async def health_check():
         "xgb_model_trained": predictor.xgb_model is not None,
         "nn_model_trained": predictor.nn_model is not None,
         "players_loaded": len(predictor.players_data),
-        "data_source": "Real ATP Data (All Years)",
-        "wimbledon_draw_loaded": True
+        "data_source": "Real ATP 2024 Data"
     }
 
 @app.get("/api/players")
@@ -359,51 +315,6 @@ async def get_players():
     ]
     
     return {"players": players_list}
-
-@app.get("/api/players/search")
-async def search_players(q: str = ""):
-    """Search for players by name with autocomplete"""
-    if not q or len(q) < 2:
-        return {"players": []}
-    
-    # Get all player names
-    all_players = predictor.data_processor.get_all_player_names()
-    
-    # Filter players that match the query (case-insensitive)
-    matching_players = [
-        player for player in all_players 
-        if q.lower() in player.lower()
-    ]
-    
-    # Sort by relevance (exact match first, then starts with, then contains)
-    def sort_key(player):
-        player_lower = player.lower()
-        q_lower = q.lower()
-        if player_lower == q_lower:
-            return (0, player)
-        elif player_lower.startswith(q_lower):
-            return (1, player)
-        else:
-            return (2, player)
-    
-    matching_players.sort(key=sort_key)
-    
-    # Limit to top 20 results
-    matching_players = matching_players[:20]
-    
-    # Get player details for matching players
-    players_with_details = []
-    for player_name in matching_players:
-        player_data = predictor.players_data.get(player_name, {})
-        if player_data:
-            players_with_details.append({
-                "name": player_name,
-                "rank": player_data.get("current_rank", 999),
-                "total_matches": player_data.get("total_matches", 0),
-                "win_rate": round(player_data.get("win_rate", 0) * 100, 1)
-            })
-    
-    return {"players": players_with_details}
 
 @app.post("/api/predict")
 async def predict_match(request: dict):
@@ -470,60 +381,6 @@ async def get_head_to_head(player1: str, player2: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/api/wimbledon/draw")
-async def get_wimbledon_draw():
-    """Get Wimbledon 2025 draw information"""
-    try:
-        return {
-            "tournament": WIMBLEDON_2025_DRAW["tournament"],
-            "surface": WIMBLEDON_2025_DRAW["surface"],
-            "current_round": WIMBLEDON_2025_DRAW["current_round"],
-            "remaining_players": WIMBLEDON_2025_DRAW["remaining_players"],
-            "seeded_players": WIMBLEDON_2025_DRAW["seeded_players"],
-            "sections": WIMBLEDON_2025_DRAW["sections"],
-            "projected_quarterfinals": WIMBLEDON_2025_DRAW["projected_quarterfinals"],
-            "third_round_players": WIMBLEDON_2025_DRAW["third_round_players"]
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/wimbledon/probabilities")
-async def get_wimbledon_probabilities():
-    """Get tournament win probabilities for remaining Wimbledon players"""
-    try:
-        remaining_players = WIMBLEDON_2025_DRAW["third_round_players"]
-        
-        # Calculate tournament win probabilities
-        probabilities = predictor.calculate_tournament_probabilities(remaining_players, 'Grass')
-        
-        # Sort by probability
-        sorted_probabilities = sorted(probabilities.items(), key=lambda x: x[1], reverse=True)
-        
-        # Format results
-        results = []
-        for player, prob in sorted_probabilities:
-            player_data = predictor.players_data.get(player, {})
-            section = get_player_section(player)
-            
-            results.append({
-                "player": player,
-                "tournament_win_probability": round(prob * 100, 2),
-                "current_rank": player_data.get("current_rank", 999),
-                "section": section,
-                "grass_win_rate": round(player_data.get("surface_stats", {}).get("Grass", {}).get("win_rate", 0) * 100, 1),
-                "draw_difficulty": round(calculate_draw_difficulty(player), 2)
-            })
-        
-        return {
-            "tournament": "Wimbledon 2025",
-            "current_round": WIMBLEDON_2025_DRAW["current_round"],
-            "probabilities": results,
-            "generated_at": datetime.utcnow().isoformat()
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.get("/api/wimbledon/predictions")
 async def get_wimbledon_predictions():
     """Get Wimbledon 2025 predictions for top matchups using real data"""
@@ -560,7 +417,7 @@ async def get_wimbledon_predictions():
             "surface": "Grass",
             "predictions": predictions,
             "generated_at": datetime.utcnow().isoformat(),
-            "data_source": "Real ATP Data (All Years)"
+            "data_source": "Real ATP 2024 Data"
         }
         
     except Exception as e:
@@ -597,8 +454,7 @@ async def get_model_info():
             "nn_feature_importance": nn_feature_importance, # Placeholder for NN importance
             "players_count": len(predictor.players_data),
             "training_samples": len(predictor.training_data) if predictor.training_data is not None else 0,
-            "data_source": "ATP Data (All Years)",
-            "wimbledon_integration": True
+            "data_source": "ATP 2024 Official Data"
         }
         
     except Exception as e:
@@ -606,5 +462,6 @@ async def get_model_info():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8002)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
+
 

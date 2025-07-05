@@ -1,7 +1,105 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
+import TournamentBracket from './components/TournamentBracket';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
+
+// Player Search Component with Autocomplete
+function PlayerSearch({ label, value, onChange, placeholder }) {
+  const [searchTerm, setSearchTerm] = useState(value || '');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setSearchTerm(value || '');
+  }, [value]);
+
+  const searchPlayers = async (query) => {
+    if (query.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/players/search?q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      setSuggestions(data.players || []);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.error('Error searching players:', error);
+      setSuggestions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    searchPlayers(value);
+  };
+
+  const handleSuggestionClick = (player) => {
+    setSearchTerm(player.name);
+    onChange(player.name);
+    setShowSuggestions(false);
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding suggestions to allow for clicks
+    setTimeout(() => setShowSuggestions(false), 200);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      onChange(searchTerm);
+      setShowSuggestions(false);
+    }
+  };
+
+  return (
+    <div className="player-search-container">
+      <label>{label}</label>
+      <div className="search-input-wrapper">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={handleInputChange}
+          onBlur={handleInputBlur}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="search-input"
+        />
+        {loading && <div className="search-loading">Searching...</div>}
+        {showSuggestions && suggestions.length > 0 && (
+          <div className="suggestions-dropdown">
+            {suggestions.map((player, index) => (
+              <div
+                key={index}
+                className="suggestion-item"
+                onClick={() => handleSuggestionClick(player)}
+              >
+                <div className="suggestion-name">{player.name}</div>
+                <div className="suggestion-details">
+                  Rank: #{player.rank} | Win Rate: {player.win_rate}% | Matches: {player.total_matches}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {showSuggestions && suggestions.length === 0 && !loading && searchTerm.length >= 2 && (
+          <div className="suggestions-dropdown">
+            <div className="suggestion-item no-results">No players found</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function App() {
   const [players, setPlayers] = useState([]);
@@ -13,11 +111,17 @@ function App() {
   const [wimbledonPredictions, setWimbledonPredictions] = useState(null);
   const [modelInfo, setModelInfo] = useState(null);
   const [activeTab, setActiveTab] = useState('predict');
+  const [drawData, setDrawData] = useState(null);
+  const [drawProbabilities, setDrawProbabilities] = useState(null);
+  const [tournamentSimulation, setTournamentSimulation] = useState(null);
 
   useEffect(() => {
     fetchPlayers();
     fetchWimbledonPredictions();
     fetchModelInfo();
+    fetchDrawData();
+    fetchDrawProbabilities();
+    fetchTournamentSimulation();
   }, []);
 
   const fetchPlayers = async () => {
@@ -50,7 +154,37 @@ function App() {
     }
   };
 
-  const handlePredict = async () => {
+  const fetchDrawData = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/wimbledon/draw`);
+      const data = await response.json();
+      setDrawData(data);
+    } catch (error) {
+      console.error('Error fetching draw data:', error);
+    }
+  };
+
+  const fetchDrawProbabilities = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/wimbledon/probabilities`);
+      const data = await response.json();
+      setDrawProbabilities(data);
+    } catch (error) {
+      console.error('Error fetching draw probabilities:', error);
+    }
+  };
+
+  const fetchTournamentSimulation = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/wimbledon/simulation`);
+      const data = await response.json();
+      setTournamentSimulation(data);
+    } catch (error) {
+      console.error('Error fetching tournament simulation:', error);
+    }
+  };
+
+  const predictMatch = async () => {
     if (!selectedPlayer1 || !selectedPlayer2) {
       alert('Please select both players');
       return;
@@ -72,149 +206,252 @@ function App() {
           player1: selectedPlayer1,
           player2: selectedPlayer2,
           surface: surface
-        })
+        }),
       });
 
       const data = await response.json();
       setPrediction(data);
     } catch (error) {
-      console.error('Error making prediction:', error);
-      alert('Error making prediction. Please try again.');
+      console.error('Error predicting match:', error);
+      alert('Error predicting match. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const getConfidenceColor = (confidence) => {
-    if (confidence >= 0.7) return 'text-green-600';
-    if (confidence >= 0.6) return 'text-yellow-600';
-    return 'text-red-600';
+  const handleMatchClick = (match, roundName) => {
+    console.log(`Match clicked: ${match.player1} vs ${match.player2} in ${roundName}`);
+    // Could be used to show additional match details or statistics
   };
 
-  const renderPredictionCard = (pred, index) => (
-    <div key={index} className="bg-white rounded-xl shadow-lg p-6 mb-4 border border-gray-200">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-gray-800">
-          {pred.player1} vs {pred.player2}
-        </h3>
-        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-          {pred.surface}
-        </span>
+  const renderPredictTab = () => (
+    <div className="tab-content">
+      <div className="predictor-header">
+        <h2>Tennis Match Predictor</h2>
+        <p>Search and select two players to predict the match outcome</p>
       </div>
       
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="text-center">
-          <div className="text-lg font-semibold text-gray-700">{pred.player1}</div>
-          <div className="text-sm text-gray-500">Rank #{pred.player1_rank}</div>
-          <div className="text-2xl font-bold text-blue-600 mt-2">
-            {Math.round(pred.player1_win_probability * 100)}%
-          </div>
+      <div className="form-container">
+        <PlayerSearch
+          label="Player 1"
+          value={selectedPlayer1}
+          onChange={setSelectedPlayer1}
+          placeholder="Search for Player 1..."
+        />
+        
+        <PlayerSearch
+          label="Player 2"
+          value={selectedPlayer2}
+          onChange={setSelectedPlayer2}
+          placeholder="Search for Player 2..."
+        />
+        
+        <div className="form-group">
+          <label>Surface</label>
+          <select value={surface} onChange={(e) => setSurface(e.target.value)}>
+            <option value="Grass">Grass (Wimbledon)</option>
+            <option value="Hard">Hard Court</option>
+            <option value="Clay">Clay Court</option>
+          </select>
         </div>
-        <div className="text-center">
-          <div className="text-lg font-semibold text-gray-700">{pred.player2}</div>
-          <div className="text-sm text-gray-500">Rank #{pred.player2_rank}</div>
-          <div className="text-2xl font-bold text-blue-600 mt-2">
-            {Math.round(pred.player2_win_probability * 100)}%
-          </div>
-        </div>
+        
+        <button 
+          onClick={predictMatch} 
+          disabled={loading || !selectedPlayer1 || !selectedPlayer2}
+          className="predict-button"
+        >
+          {loading ? 'Predicting...' : 'Predict Match Outcome 🎯'}
+        </button>
       </div>
 
-      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-        <div>
-          <span className="text-sm text-gray-600">Predicted Winner: </span>
-          <span className="font-bold text-green-600">{pred.predicted_winner}</span>
-        </div>
-        <div>
-          <span className="text-sm text-gray-600">Confidence: </span>
-          <span className={`font-bold ${getConfidenceColor(pred.confidence)}`}>
-            {Math.round(pred.confidence * 100)}%
-          </span>
-        </div>
-      </div>
-      
-      {pred.head_to_head && pred.head_to_head !== "Unknown" && (
-        <div className="mt-2 text-sm text-gray-600">
-          Head-to-head: {pred.head_to_head}
+      {prediction && (
+        <div className="prediction-result">
+          <h3>Match Prediction</h3>
+          <div className="prediction-details">
+            <div className="match-info">
+              <h4>{prediction.player1} vs {prediction.player2}</h4>
+              <p>Surface: {prediction.surface}</p>
+            </div>
+            
+            <div className="prediction-outcome">
+              <div className="winner">
+                <strong>Predicted Winner: {prediction.predicted_winner}</strong>
+                <p>Confidence: {(prediction.confidence * 100).toFixed(1)}%</p>
+              </div>
+              
+              <div className="probabilities">
+                <div className="prob-bar">
+                  <span>{prediction.player1}</span>
+                  <div className="bar">
+                    <div 
+                      className="fill player1" 
+                      style={{width: `${prediction.player1_win_probability * 100}%`}}
+                    ></div>
+                  </div>
+                  <span>{(prediction.player1_win_probability * 100).toFixed(1)}%</span>
+                </div>
+                
+                <div className="prob-bar">
+                  <span>{prediction.player2}</span>
+                  <div className="bar">
+                    <div 
+                      className="fill player2" 
+                      style={{width: `${prediction.player2_win_probability * 100}%`}}
+                    ></div>
+                  </div>
+                  <span>{(prediction.player2_win_probability * 100).toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="stats-comparison">
+              <div className="stat-row">
+                <span>Ranking</span>
+                <span>#{prediction.player1_rank}</span>
+                <span>#{prediction.player2_rank}</span>
+              </div>
+              <div className="stat-row">
+                <span>Overall Win Rate</span>
+                <span>{prediction.player1_win_rate}%</span>
+                <span>{prediction.player2_win_rate}%</span>
+              </div>
+              <div className="stat-row">
+                <span>{prediction.surface} Win Rate</span>
+                <span>{prediction.player1_surface_win_rate}%</span>
+                <span>{prediction.player2_surface_win_rate}%</span>
+              </div>
+              <div className="stat-row">
+                <span>Head-to-Head</span>
+                <span colSpan="2">{prediction.head_to_head} ({prediction.h2h_matches} matches)</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
   );
 
-  const renderPlayerRankings = () => (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
-        <h2 className="text-2xl font-bold">ATP Player Rankings</h2>
-        <p className="text-blue-100">Current top players in our prediction model</p>
+  const renderWimbledonTab = () => (
+    <div className="tab-content">
+      <div className="wimbledon-header">
+        <h2>Wimbledon 2025 Predictions</h2>
+        <p>AI-powered predictions for potential Wimbledon matchups</p>
       </div>
       
-      <div className="p-6">
-        <div className="grid gap-4">
-          {players.slice(0, 10).map((player, index) => (
-            <div key={player.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
-                  {player.rank}
+      {wimbledonPredictions && (
+        <div className="wimbledon-predictions">
+          {wimbledonPredictions.predictions?.map((pred, index) => (
+            <div key={index} className="wimbledon-match">
+              <div className="match-header">
+                <h4>{pred.player1} vs {pred.player2}</h4>
+                <span className="surface-tag">Grass Court</span>
+              </div>
+              
+              <div className="match-prediction">
+                <div className="predicted-winner">
+                  Winner: <strong>{pred.predicted_winner}</strong>
+                  <span className="confidence">({(pred.confidence * 100).toFixed(1)}%)</span>
                 </div>
-                <div>
-                  <div className="font-semibold text-gray-800">{player.name}</div>
-                  <div className="text-sm text-gray-600">
-                    {player.wins}/{player.matches_played} matches ({player.win_rate}% win rate)
+                
+                <div className="match-probabilities">
+                  <div className="prob-item">
+                    <span>{pred.player1}</span>
+                    <span>{(pred.player1_win_probability * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="prob-item">
+                    <span>{pred.player2}</span>
+                    <span>{(pred.player2_win_probability * 100).toFixed(1)}%</span>
                   </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="text-lg font-bold text-blue-600">{player.win_rate}%</div>
-                <div className="text-sm text-gray-500">Win Rate</div>
               </div>
             </div>
           ))}
         </div>
+      )}
+    </div>
+  );
+
+  const renderDrawTab = () => (
+    <div className="tab-content">
+      <div className="draw-tab-header">
+        <h2>Wimbledon 2025 Tournament Bracket</h2>
+        <p>Complete tournament simulation with predicted match results and scores</p>
+      </div>
+      
+      <TournamentBracket 
+        simulationData={tournamentSimulation}
+        onMatchClick={handleMatchClick}
+      />
+    </div>
+  );
+
+  const renderRankingsTab = () => (
+    <div className="tab-content">
+      <div className="rankings-header">
+        <h2>Player Rankings</h2>
+        <p>Top ATP players with comprehensive statistics</p>
+      </div>
+      
+      <div className="rankings-table">
+        <div className="table-header">
+          <span>Rank</span>
+          <span>Player</span>
+          <span>Matches</span>
+          <span>Win Rate</span>
+          <span>Grass Win Rate</span>
+          <span>Recent Form</span>
+        </div>
+        
+        {players.slice(0, 20).map((player, index) => (
+          <div key={index} className="table-row">
+            <span>#{player.rank}</span>
+            <span className="player-name">{player.name}</span>
+            <span>{player.total_matches}</span>
+            <span>{player.win_rate}%</span>
+            <span>{player.grass_win_rate}%</span>
+            <span>{player.recent_form}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
 
-  const renderModelInfo = () => (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6">
-        <h2 className="text-2xl font-bold">XGBoost Model Insights</h2>
-        <p className="text-green-100">Feature importance and model performance</p>
+  const renderModelTab = () => (
+    <div className="tab-content">
+      <div className="model-header">
+        <h2>Model Insights</h2>
+        <p>XGBoost + Neural Network ensemble performance and feature importance</p>
       </div>
       
       {modelInfo && (
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg text-center">
-              <div className="text-3xl font-bold text-blue-600">{modelInfo.players_count}</div>
-              <div className="text-sm text-gray-600">Players</div>
+        <div className="model-info">
+          <div className="model-stats">
+            <div className="stat-card">
+              <h3>{modelInfo.players_count || 0}</h3>
+              <p>Players</p>
             </div>
-            <div className="bg-green-50 p-4 rounded-lg text-center">
-              <div className="text-3xl font-bold text-green-600">{modelInfo.feature_count}</div>
-              <div className="text-sm text-gray-600">Features</div>
+            <div className="stat-card">
+              <h3>{modelInfo.feature_count || 0}</h3>
+              <p>Features</p>
             </div>
-            <div className="bg-purple-50 p-4 rounded-lg text-center">
-              <div className="text-3xl font-bold text-purple-600">XGBoost</div>
-              <div className="text-sm text-gray-600">Algorithm</div>
+            <div className="stat-card">
+              <h3>Ensemble</h3>
+              <p>XGB + NN</p>
             </div>
           </div>
-
-          <h3 className="text-xl font-bold text-gray-800 mb-4">Feature Importance</h3>
-          <div className="space-y-3">
-            {modelInfo.feature_importance?.slice(0, 8).map((feature, index) => (
-              <div key={index} className="flex items-center">
-                <div className="w-32 text-sm text-gray-600 flex-shrink-0">
-                  {feature.feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          
+          <div className="feature-importance">
+            <h3>Feature Importance (XGBoost)</h3>
+            {modelInfo.xgb_feature_importance?.slice(0, 8).map((feature, index) => (
+              <div key={index} className="feature-item">
+                <span className="feature-name">{feature.feature}</span>
+                <div className="importance-bar">
+                  <div 
+                    className="importance-fill" 
+                    style={{width: `${(feature.importance * 100)}%`}}
+                  ></div>
                 </div>
-                <div className="flex-1 mx-4">
-                  <div className="bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full"
-                      style={{ width: `${feature.importance * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <div className="text-sm font-medium text-gray-700 w-12">
-                  {Math.round(feature.importance * 100)}%
-                </div>
+                <span className="importance-value">{(feature.importance * 100).toFixed(1)}%</span>
               </div>
             ))}
           </div>
@@ -224,174 +461,62 @@ function App() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-green-600 via-blue-600 to-purple-600 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-6">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold mb-2">🎾 Wimbledon 2025 Predictor</h1>
-            <p className="text-xl text-blue-100">AI-Powered Tennis Match Predictions using XGBoost</p>
-          </div>
+    <div className="App">
+      <header className="app-header">
+        <div className="header-content">
+          <h1>🎾 Wimbledon 2025 Predictor</h1>
+          <p>AI-Powered Tennis Predictions with Neural Network Ensemble</p>
         </div>
       </header>
 
-      {/* Navigation */}
-      <nav className="bg-white shadow-md sticky top-0 z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-center space-x-8">
-            {[
-              { id: 'predict', label: 'Match Predictor', icon: '🎯' },
-              { id: 'wimbledon', label: 'Wimbledon 2025', icon: '🏆' },
-              { id: 'rankings', label: 'Player Rankings', icon: '📊' },
-              { id: 'model', label: 'Model Insights', icon: '🤖' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-6 font-medium transition-colors border-b-2 ${
-                  activeTab === tab.id
-                    ? 'text-blue-600 border-blue-600'
-                    : 'text-gray-600 border-transparent hover:text-blue-600'
-                }`}
-              >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
+      <nav className="tab-navigation">
+        <button 
+          className={activeTab === 'predict' ? 'tab active' : 'tab'}
+          onClick={() => setActiveTab('predict')}
+        >
+          🎯 Match Predictor
+        </button>
+        <button 
+          className={activeTab === 'wimbledon' ? 'tab active' : 'tab'}
+          onClick={() => setActiveTab('wimbledon')}
+        >
+          🏆 Wimbledon 2025
+        </button>
+        <button 
+          className={activeTab === 'draw' ? 'tab active' : 'tab'}
+          onClick={() => setActiveTab('draw')}
+        >
+          🗂️ Tournament Bracket
+        </button>
+        <button 
+          className={activeTab === 'rankings' ? 'tab active' : 'tab'}
+          onClick={() => setActiveTab('rankings')}
+        >
+          📊 Player Rankings
+        </button>
+        <button 
+          className={activeTab === 'model' ? 'tab active' : 'tab'}
+          onClick={() => setActiveTab('model')}
+        >
+          🤖 Model Insights
+        </button>
       </nav>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        {activeTab === 'predict' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
-              <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white p-6">
-                <h2 className="text-3xl font-bold mb-2">Tennis Match Predictor</h2>
-                <p className="text-blue-100">Select two players to predict the match outcome</p>
-              </div>
-              
-              <div className="p-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Player 1</label>
-                    <select
-                      value={selectedPlayer1}
-                      onChange={(e) => setSelectedPlayer1(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Select Player 1</option>
-                      {players.map(player => (
-                        <option key={player.name} value={player.name}>
-                          #{player.rank} {player.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Player 2</label>
-                    <select
-                      value={selectedPlayer2}
-                      onChange={(e) => setSelectedPlayer2(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="">Select Player 2</option>
-                      {players.map(player => (
-                        <option key={player.name} value={player.name}>
-                          #{player.rank} {player.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Surface</label>
-                    <select
-                      value={surface}
-                      onChange={(e) => setSurface(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="Grass">Grass (Wimbledon)</option>
-                      <option value="Hard">Hard Court</option>
-                      <option value="Clay">Clay Court</option>
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handlePredict}
-                  disabled={loading || !selectedPlayer1 || !selectedPlayer2}
-                  className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-4 px-8 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center">
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Predicting...
-                    </span>
-                  ) : (
-                    'Predict Match Outcome 🎯'
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Prediction Results */}
-            {prediction && (
-              <div className="max-w-2xl mx-auto">
-                {renderPredictionCard(prediction)}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'wimbledon' && (
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
-              <div className="bg-gradient-to-r from-green-600 to-purple-600 text-white p-6">
-                <h2 className="text-3xl font-bold mb-2">🏆 Wimbledon 2025 Predictions</h2>
-                <p className="text-green-100">AI predictions for potential semifinal matchups</p>
-              </div>
-            </div>
-
-            {wimbledonPredictions && (
-              <div className="space-y-6">
-                {wimbledonPredictions.predictions?.map((pred, index) => renderPredictionCard(pred, index))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'rankings' && (
-          <div className="max-w-4xl mx-auto">
-            {renderPlayerRankings()}
-          </div>
-        )}
-
-        {activeTab === 'model' && (
-          <div className="max-w-4xl mx-auto">
-            {renderModelInfo()}
-          </div>
-        )}
+      <main className="main-content">
+        {activeTab === 'predict' && renderPredictTab()}
+        {activeTab === 'wimbledon' && renderWimbledonTab()}
+        {activeTab === 'draw' && renderDrawTab()}
+        {activeTab === 'rankings' && renderRankingsTab()}
+        {activeTab === 'model' && renderModelTab()}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-800 text-white py-8 mt-12">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-gray-300">
-            Powered by XGBoost Machine Learning • Tennis data from multiple free sources
-          </p>
-          <p className="text-sm text-gray-400 mt-2">
-            Predictions are for entertainment purposes only
-          </p>
-        </div>
+      <footer className="app-footer">
+        <p>Powered by XGBoost + Neural Network Ensemble • Real ATP data from multiple sources</p>
+        <p>Predictions are for entertainment purposes only</p>
       </footer>
     </div>
   );
 }
 
 export default App;
+
