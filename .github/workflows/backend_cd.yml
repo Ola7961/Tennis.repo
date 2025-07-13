@@ -1,0 +1,41 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r backend/requirements.txt
+
+    - name: Deploy to Render
+      run: |
+        # Render deployment typically involves linking your GitHub repo directly
+        # or using Render's API to trigger a deploy hook.
+        # This step is a placeholder for triggering a Render deploy.
+        # You might use curl to hit a deploy hook URL provided by Render.
+        # Example: curl -X POST https://api.render.com/deploy/srv-<YOUR_SERVICE_ID>?key=<YOUR_DEPLOY_HOOK_KEY>
+        echo "Backend built and dependencies installed. Triggering Render deployment..."
+        # Replace with your actual Render deploy hook URL and API key if using this method
+        # curl -X POST -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" https://api.render.com/v1/services/<YOUR_SERVICE_ID>/deploys
+        # For simplicity, Render often handles deployments directly from GitHub pushes
+        # once the service is configured to auto-deploy from a branch.
+
+
