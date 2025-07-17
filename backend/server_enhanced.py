@@ -350,7 +350,7 @@ async def startup_event():
     try:
         features, labels = model.load_and_process_data()
         model.train_models(features, labels)
-    except Exception as e:
+except Exception as e:
     import traceback
     print("❌ Exception in model startup:")
     traceback.print_exc()
