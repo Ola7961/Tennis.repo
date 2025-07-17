@@ -56,7 +56,8 @@ class TennisPredictor:
         # Load ATP singles match data from 1968-2024 for player stats and model training
         data_files = []
         for year in range(1968, 2025):
-            data_files.append(f'/home/ubuntu/Tennis_repo/data/atp_matches_{year}.csv')
+           data_files.append(f'data/atp_matches_{year}.csv')
+
 
         all_matches = []
         
@@ -350,7 +351,10 @@ async def startup_event():
         features, labels = model.load_and_process_data()
         model.train_models(features, labels)
     except Exception as e:
-        print(f"Error during model startup: {e}")
+    import traceback
+    print("❌ Exception in model startup:")
+    traceback.print_exc()
+
         # Optionally, handle this error more gracefully, e.g., by logging and exiting
 
 @app.post("/api/predict")
