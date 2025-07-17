@@ -15,6 +15,10 @@ import glob
 from typing import Dict, List, Optional
 
 app = FastAPI(title="Tennis Predictor API", version="2.0.0")
+@app.get("/")
+def root():
+    return {"status": "Backend is live 🎾"}
+
 
 # Enable CORS
 app.add_middleware(
