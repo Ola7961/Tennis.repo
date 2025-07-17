@@ -1,5 +1,5 @@
-from server_enhanced import model
+from backend.server_enhanced import model
 
 features, labels = model.load_and_process_data()
 model.train_models(features, labels)
-model.save_models()
+model.save_models("backend/models")  # specify folder path
