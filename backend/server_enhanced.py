@@ -346,14 +346,14 @@ model = TennisPredictor()
 
 @app.on_event("startup")
 async def startup_event():
-    global model
     try:
-        features, labels = model.load_and_process_data()
-        model.train_models(features, labels)
+        model.load_models("backend/models")
+        print("✅ Pre-trained models loaded successfully.")
     except Exception as e:
         import traceback
-        print("❌ Exception in model startup:")
+        print("❌ Failed to load pre-trained models:")
         traceback.print_exc()
+
 
 
         # Optionally, handle this error more gracefully, e.g., by logging and exiting
