@@ -1,6 +1,3 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -9,29 +6,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 import xgboost as xgb
-import uvicorn
 import os
 import glob
-from typing import Dict, List, Optional
-
-app = FastAPI(title="Tennis Predictor API", version="2.0.0")
-
-# Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Global variables
-model = None
-
-class PredictionRequest(BaseModel):
-    player1: str
-    player2: str
-    surface: str = "Grass"
 
 class TennisPredictor:
     def __init__(self):
@@ -47,13 +23,10 @@ class TennisPredictor:
         ]
     
     def load_and_process_data(self):
-        print("Loading all ATP men's singles data from 1968-2024...")
+        print("Loading only 2024 ATP data for sandbox environment...")
         
-        # Load ATP singles match data from 1968-2024 for player stats and model training
-        data_files = []
-        for year in range(1968, 2025):
-            data_files.append(f'/home/ubuntu/Tennis_repo/data/atp_matches_{year}.csv')
-
+        # Load only 2024 ATP match data
+        data_files = glob.glob('/home/ubuntu/Tennis_repo/data/atp_matches_2024.csv') 
         all_matches = []
         
         for file in sorted(data_files):
@@ -66,7 +39,7 @@ class TennisPredictor:
                 continue
         
         if not all_matches:
-            raise Exception("No match data files found for 1968-2024 men's singles")
+            raise Exception("No match data files found for 2024")
         
         # Combine all data
         df = pd.concat(all_matches, ignore_index=True)
@@ -335,66 +308,5 @@ class TennisPredictor:
         # Sort by rank and limit results
         matching_players.sort(key=lambda x: x['rank'])
         return matching_players[:limit]
-
-
-model = TennisPredictor()
-
-@app.on_event("startup")
-async def startup_event():
-    global model
-    try:
-        features, labels = model.load_and_process_data()
-        model.train_models(features, labels)
-    except Exception as e:
-        print(f"Error during model startup: {e}")
-        # Optionally, handle this error more gracefully, e.g., by logging and exiting
-
-@app.post("/api/predict")
-async def predict(request: PredictionRequest):
-    try:
-        prediction_result = model.predict_match(request.player1, request.player2, request.surface)
-        return prediction_result
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@app.get("/api/players/search")
-async def search_players(q: str):
-    try:
-        players = model.search_players(q)
-        return {"players": players}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/api/model/info")
-async def get_model_info():
-    try:
-        if not model.xgb_model or not model.nn_model:
-            raise HTTPException(status_code=503, detail="Model not trained yet.")
-        
-        # Get feature importance from XGBoost
-        feature_importances = model.xgb_model.feature_importances_
-        feature_names = model.feature_names
-        
-        # Create a list of dictionaries for feature importance
-        xgb_feature_importance = [
-            {"feature": name, "importance": importance}
-            for name, importance in zip(feature_names, feature_importances)
-        ]
-        
-        # Sort by importance
-        xgb_feature_importance.sort(key=lambda x: x["importance"], reverse=True)
-
-        return {
-            "players_count": len(model.players_stats),
-            "feature_count": len(model.feature_names),
-            "xgb_train_accuracy": model.xgb_train_accuracy,
-            "xgb_test_accuracy": model.xgb_test_accuracy,
-            "nn_train_accuracy": model.nn_train_accuracy,
-            "nn_test_accuracy": model.nn_test_accuracy,
-            "xgb_feature_importance": xgb_feature_importance
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 

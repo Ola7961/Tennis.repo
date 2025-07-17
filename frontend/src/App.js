@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import TournamentBracket from './components/TournamentBracket';
+// import TournamentBracket from './components/TournamentBracket'; // Removed as Tournament Bracket tab is removed
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -102,47 +102,47 @@ function PlayerSearch({ label, value, onChange, placeholder }) {
 }
 
 function App() {
-  const [players, setPlayers] = useState([]);
+  // const [players, setPlayers] = useState([]); // Removed as Player Rankings tab is removed
   const [selectedPlayer1, setSelectedPlayer1] = useState('');
   const [selectedPlayer2, setSelectedPlayer2] = useState('');
   const [surface, setSurface] = useState('Grass');
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [wimbledonPredictions, setWimbledonPredictions] = useState(null);
+  // const [wimbledonPredictions, setWimbledonPredictions] = useState(null); // Removed
   const [modelInfo, setModelInfo] = useState(null);
   const [activeTab, setActiveTab] = useState('predict');
-  const [drawData, setDrawData] = useState(null);
-  const [drawProbabilities, setDrawProbabilities] = useState(null);
-  const [tournamentSimulation, setTournamentSimulation] = useState(null);
+  // const [drawData, setDrawData] = useState(null); // Removed
+  // const [drawProbabilities, setDrawProbabilities] = useState(null); // Removed
+  // const [tournamentSimulation, setTournamentSimulation] = useState(null); // Removed
 
   useEffect(() => {
-    fetchPlayers();
-    fetchWimbledonPredictions();
+    // fetchPlayers(); // Removed
+    // fetchWimbledonPredictions(); // Removed
     fetchModelInfo();
-    fetchDrawData();
-    fetchDrawProbabilities();
-    fetchTournamentSimulation();
+    // fetchDrawData(); // Removed
+    // fetchDrawProbabilities(); // Removed
+    // fetchTournamentSimulation(); // Removed
   }, []);
 
-  const fetchPlayers = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/players`);
-      const data = await response.json();
-      setPlayers(data.players || []);
-    } catch (error) {
-      console.error('Error fetching players:', error);
-    }
-  };
+  // const fetchPlayers = async () => { // Removed
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/api/players`);
+  //     const data = await response.json();
+  //     setPlayers(data.players || []);
+  //   } catch (error) {
+  //     console.error('Error fetching players:', error);
+  //   }
+  // };
 
-  const fetchWimbledonPredictions = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/wimbledon/predictions`);
-      const data = await response.json();
-      setWimbledonPredictions(data);
-    } catch (error) {
-      console.error('Error fetching Wimbledon predictions:', error);
-    }
-  };
+  // const fetchWimbledonPredictions = async () => { // Removed
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/api/wimbledon/predictions`);
+  //     const data = await response.json();
+  //     setWimbledonPredictions(data);
+  //   } catch (error) {
+  //     console.error('Error fetching Wimbledon predictions:', error);
+  //   }
+  // };
 
   const fetchModelInfo = async () => {
     try {
@@ -154,35 +154,35 @@ function App() {
     }
   };
 
-  const fetchDrawData = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/wimbledon/draw`);
-      const data = await response.json();
-      setDrawData(data);
-    } catch (error) {
-      console.error('Error fetching draw data:', error);
-    }
-  };
+  // const fetchDrawData = async () => { // Removed
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/api/wimbledon/draw`);
+  //     const data = await response.json();
+  //     setDrawData(data);
+  //   } catch (error) {
+  //     console.error('Error fetching draw data:', error);
+  //   }
+  // };
 
-  const fetchDrawProbabilities = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/wimbledon/probabilities`);
-      const data = await response.json();
-      setDrawProbabilities(data);
-    } catch (error) {
-      console.error('Error fetching draw probabilities:', error);
-    }
-  };
+  // const fetchDrawProbabilities = async () => { // Removed
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/api/wimbledon/probabilities`);
+  //     const data = await response.json();
+  //     setDrawProbabilities(data);
+  //   } catch (error) {
+  //     console.error('Error fetching draw probabilities:', error);
+  //   }
+  // };
 
-  const fetchTournamentSimulation = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/wimbledon/simulation`);
-      const data = await response.json();
-      setTournamentSimulation(data);
-    } catch (error) {
-      console.error('Error fetching tournament simulation:', error);
-    }
-  };
+  // const fetchTournamentSimulation = async () => { // Removed
+  //   try {
+  //     const response = await fetch(`${API_BASE_URL}/api/wimbledon/simulation`);
+  //     const data = await response.json();
+  //     setTournamentSimulation(data);
+  //   } catch (error) {
+  //     console.error('Error fetching tournament simulation:', error);
+  //   }
+  // };
 
   const predictMatch = async () => {
     if (!selectedPlayer1 || !selectedPlayer2) {
@@ -219,10 +219,10 @@ function App() {
     }
   };
 
-  const handleMatchClick = (match, roundName) => {
-    console.log(`Match clicked: ${match.player1} vs ${match.player2} in ${roundName}`);
-    // Could be used to show additional match details or statistics
-  };
+  // const handleMatchClick = (match, roundName) => { // Removed
+  //   console.log(`Match clicked: ${match.player1} vs ${match.player2} in ${roundName}`);
+  //   // Could be used to show additional match details or statistics
+  // };
 
   const renderPredictTab = () => (
     <div className="tab-content">
@@ -331,90 +331,90 @@ function App() {
     </div>
   );
 
-  const renderWimbledonTab = () => (
-    <div className="tab-content">
-      <div className="wimbledon-header">
-        <h2>Wimbledon 2025 Predictions</h2>
-        <p>AI-powered predictions for potential Wimbledon matchups</p>
-      </div>
+  // const renderWimbledonTab = () => ( // Removed
+  //   <div className="tab-content">
+  //     <div className="wimbledon-header">
+  //       <h2>Wimbledon 2025 Predictions</h2>
+  //       <p>AI-powered predictions for potential Wimbledon matchups</p>
+  //     </div>
       
-      {wimbledonPredictions && (
-        <div className="wimbledon-predictions">
-          {wimbledonPredictions.predictions?.map((pred, index) => (
-            <div key={index} className="wimbledon-match">
-              <div className="match-header">
-                <h4>{pred.player1} vs {pred.player2}</h4>
-                <span className="surface-tag">Grass Court</span>
-              </div>
+  //     {wimbledonPredictions && (
+  //       <div className="wimbledon-predictions">
+  //         {wimbledonPredictions.predictions?.map((pred, index) => (
+  //           <div key={index} className="wimbledon-match">
+  //             <div className="match-header">
+  //               <h4>{pred.player1} vs {pred.player2}</h4>
+  //               <span className="surface-tag">Grass Court</span>
+  //             </div>
               
-              <div className="match-prediction">
-                <div className="predicted-winner">
-                  Winner: <strong>{pred.predicted_winner}</strong>
-                  <span className="confidence">({(pred.confidence * 100).toFixed(1)}%)</span>
-                </div>
-                
-                <div className="match-probabilities">
-                  <div className="prob-item">
-                    <span>{pred.player1}</span>
-                    <span>{(pred.player1_win_probability * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="prob-item">
-                    <span>{pred.player2}</span>
-                    <span>{(pred.player2_win_probability * 100).toFixed(1)}%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  //             <div className="match-prediction">
+  //               <div className="predicted-winner">
+  //                 Winner: <strong>{pred.predicted_winner}</strong>
+  //                 <span className="confidence">({(pred.confidence * 100).toFixed(1)}%)</span>
+  //               </div>
+              
+  //               <div className="match-probabilities">
+  //                 <div className="prob-item">
+  //                   <span>{pred.player1}</span>
+  //                   <span>{(pred.player1_win_probability * 100).toFixed(1)}%</span>
+  //                 </div>
+  //                 <div className="prob-item">
+  //                   <span>{pred.player2}</span>
+  //                   <span>{(pred.player2_win_probability * 100).toFixed(1)}%</span>
+  //                 </div>
+  //               </div>
+  //             </div>
+  //           </div>
+  //         ))}
+  //       </div>
+  //     )}
+  //   </div>
+  // );
 
-  const renderDrawTab = () => (
-    <div className="tab-content">
-      <div className="draw-tab-header">
-        <h2>Wimbledon 2025 Tournament Bracket</h2>
-        <p>Complete tournament simulation with predicted match results and scores</p>
-      </div>
+  // const renderDrawTab = () => ( // Removed
+  //   <div className="tab-content">
+  //     <div className="draw-tab-header">
+  //       <h2>Wimbledon 2025 Tournament Bracket</h2>
+  //       <p>Complete tournament simulation with predicted match results and scores</p>
+  //     </div>
       
-      <TournamentBracket 
-        simulationData={tournamentSimulation}
-        onMatchClick={handleMatchClick}
-      />
-    </div>
-  );
+  //     <TournamentBracket 
+  //       simulationData={tournamentSimulation}
+  //       onMatchClick={handleMatchClick}
+  //     />
+  //   </div>
+  // );
 
-  const renderRankingsTab = () => (
-    <div className="tab-content">
-      <div className="rankings-header">
-        <h2>Player Rankings</h2>
-        <p>Top ATP players with comprehensive statistics</p>
-      </div>
+  // const renderRankingsTab = () => ( // Removed
+  //   <div className="tab-content">
+  //     <div className="rankings-header">
+  //       <h2>Player Rankings</h2>
+  //       <p>Top ATP players with comprehensive statistics</p>
+  //     </div>
       
-      <div className="rankings-table">
-        <div className="table-header">
-          <span>Rank</span>
-          <span>Player</span>
-          <span>Matches</span>
-          <span>Win Rate</span>
-          <span>Grass Win Rate</span>
-          <span>Recent Form</span>
-        </div>
+  //     <div className="rankings-table">
+  //       <div className="table-header">
+  //         <span>Rank</span>
+  //         <span>Player</span>
+  //         <span>Matches</span>
+  //         <span>Win Rate</span>
+  //         <span>Grass Win Rate</span>
+  //         <span>Recent Form</span>
+  //       </div>
         
-        {players.slice(0, 20).map((player, index) => (
-          <div key={index} className="table-row">
-            <span>#{player.rank}</span>
-            <span className="player-name">{player.name}</span>
-            <span>{player.total_matches}</span>
-            <span>{player.win_rate}%</span>
-            <span>{player.grass_win_rate}%</span>
-            <span>{player.recent_form}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  //       {players.slice(0, 20).map((player, index) => (
+  //         <div key={index} className="table-row">
+  //           <span>#{player.rank}</span>
+  //           <span className="player-name">{player.name}</span>
+  //           <span>{player.total_matches}</span>
+  //           <span>{player.win_rate}%</span>
+  //           <span>{player.grass_win_rate}%</span>
+  //           <span>{player.recent_form}</span>
+  //         </div>
+  //       ))}
+  //     </div>
+  //   </div>
+  // );
 
   const renderModelTab = () => (
     <div className="tab-content">
@@ -476,24 +476,9 @@ function App() {
         >
           🎯 Match Predictor
         </button>
-        <button 
-          className={activeTab === 'wimbledon' ? 'tab active' : 'tab'}
-          onClick={() => setActiveTab('wimbledon')}
-        >
-          🏆 Wimbledon 2025
-        </button>
-        <button 
-          className={activeTab === 'draw' ? 'tab active' : 'tab'}
-          onClick={() => setActiveTab('draw')}
-        >
-          🗂️ Tournament Bracket
-        </button>
-        <button 
-          className={activeTab === 'rankings' ? 'tab active' : 'tab'}
-          onClick={() => setActiveTab('rankings')}
-        >
-          📊 Player Rankings
-        </button>
+        {/* Removed Wimbledon 2025 tab */}
+        {/* Removed Tournament Bracket tab */}
+        {/* Removed Player Rankings tab */}
         <button 
           className={activeTab === 'model' ? 'tab active' : 'tab'}
           onClick={() => setActiveTab('model')}
@@ -504,9 +489,9 @@ function App() {
 
       <main className="main-content">
         {activeTab === 'predict' && renderPredictTab()}
-        {activeTab === 'wimbledon' && renderWimbledonTab()}
-        {activeTab === 'draw' && renderDrawTab()}
-        {activeTab === 'rankings' && renderRankingsTab()}
+        {/* Removed Wimbledon 2025 tab content */}
+        {/* Removed Tournament Bracket tab content */}
+        {/* Removed Player Rankings tab content */}
         {activeTab === 'model' && renderModelTab()}
       </main>
 
@@ -519,4 +504,5 @@ function App() {
 }
 
 export default App;
+
 

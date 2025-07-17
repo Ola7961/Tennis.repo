@@ -1,0 +1,36 @@
+name: Heroku Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+env:
+  HEROKU_APP_NAME: your-heroku-app-name # Replace with your Heroku app name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Login to Heroku Container Registry
+      uses: docker/login-action@v2
+      with:
+        username: _
+        password: ${{ secrets.HEROKU_API_KEY }}
+        registry: registry.heroku.com
+
+    - name: Build and push Docker image
+      run: |
+        docker build -t registry.heroku.com/$HEROKU_APP_NAME/web ./backend
+        docker push registry.heroku.com/$HEROKU_APP_NAME/web
+
+    - name: Release Heroku app
+      run: heroku container:release web --app $HEROKU_APP_NAME
+      env:
+        HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+
+
