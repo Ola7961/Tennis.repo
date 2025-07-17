@@ -308,5 +308,19 @@ class TennisPredictor:
         # Sort by rank and limit results
         matching_players.sort(key=lambda x: x['rank'])
         return matching_players[:limit]
+import joblib
+
+def save_models(self, path="models"):
+    os.makedirs(path, exist_ok=True)
+    joblib.dump(self.xgb_model, os.path.join(path, "xgb_model.pkl"))
+    joblib.dump(self.nn_model, os.path.join(path, "nn_model.pkl"))
+    joblib.dump(self.scaler, os.path.join(path, "scaler.pkl"))
+    joblib.dump(self.players_stats, os.path.join(path, "players_stats.pkl"))
+
+def load_models(self, path="models"):
+    self.xgb_model = joblib.load(os.path.join(path, "xgb_model.pkl"))
+    self.nn_model = joblib.load(os.path.join(path, "nn_model.pkl"))
+    self.scaler = joblib.load(os.path.join(path, "scaler.pkl"))
+    self.players_stats = joblib.load(os.path.join(path, "players_stats.pkl"))
 
 
