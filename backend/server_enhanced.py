@@ -398,3 +398,10 @@ async def get_model_info():
 
 
 
+
+
+@app.get("/")
+async def root():
+    return {"message": "Backend running"}
+
+
