@@ -49,6 +49,23 @@ class TennisPredictor:
             'player2_recent_form', 'rank_diff', 'win_rate_diff', 'surface_win_rate_diff',
             'h2h_advantage'
         ]
+    import joblib  # Make sure joblib is installed
+
+def load_models(self, path):
+    self.xgb_model = joblib.load(os.path.join(path, "xgb_model.pkl"))
+    self.nn_model = joblib.load(os.path.join(path, "nn_model.pkl"))
+    self.scaler = joblib.load(os.path.join(path, "scaler.pkl"))
+
+    # Optionally: load player stats
+    with open(os.path.join(path, "players_stats.pkl"), "rb") as f:
+        self.players_stats = joblib.load(f)
+
+    # You may also store training accuracies when saving and load them here if needed
+    self.xgb_train_accuracy = None
+    self.xgb_test_accuracy = None
+    self.nn_train_accuracy = None
+    self.nn_test_accuracy = None
+
     
     def load_and_process_data(self):
         print("Loading all ATP men's singles data from 1968-2024...")
